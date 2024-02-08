@@ -1,5 +1,4 @@
 from tkinter import *
-import time
 
 
 # ---------------------------- CONSTANTS ------------------------------- #
@@ -11,6 +10,7 @@ FONT_NAME = "Courier"
 WORK_MIN = 25
 SHORT_BREAK_MIN = 5
 LONG_BREAK_MIN = 20
+timer = None
 
 # ---------------------------- TIMER RESET ------------------------------- # 
 
@@ -22,10 +22,19 @@ def reset_timer():
     global timer_should_continue
     global minutes
     global seconds
-    minutes = 2
-    seconds = 0
-    timer_should_continue = False
+    global timer
+    global marks
+    global iteration_count
+
+    minutes, seconds, timer_should_continue = 2, 0, False
     canvas.itemconfig(timer_text, text=f"0{minutes}:0{seconds}")
+    marks = ''
+
+    title.config(text='Timer', fg=GREEN, font=(FONT_NAME, 28))
+    chmark.config(text='')
+
+    if timer is not None:
+        window.after_cancel(timer)
     
 
 # ---------------------------- TIMER MECHANISM ------------------------------- # 
@@ -33,20 +42,44 @@ def reset_timer():
 # ---------------------------- COUNTDOWN MECHANISM ------------------------------- #
 
 
-minutes = 2
-seconds = 0
-timer_should_continue = True
+minutes, seconds, timer_should_continue = 1, 0, True
+#seconds = 0
+#timer_should_continue = True
+iteration_count = 0
+marks = ''
 
 
 def start_timer():
     global minutes
     global seconds
     global timer_should_continue
+    global iteration_count
     timer_should_continue = True
     button1.config(state=DISABLED)
     button2.config(state=ACTIVE)
+    global timer
 
     if timer_should_continue:
+        global marks
+
+        tick_count = int(iteration_count//2)
+
+        print(iteration_count)
+
+        if iteration_count == 0:
+            marks = ''
+
+        for i in range(0, tick_count):
+            print(tick_count)
+            if len(marks) < tick_count:
+                marks += '🗸'
+        chmark.config(text=marks, fg=GREEN, bg=YELLOW, font=(FONT_NAME, 28))
+
+        if iteration_count % 2 == 0:
+            title.config(text='Work', fg=GREEN, font=(FONT_NAME, 28))
+        else:
+            title.config(text='Break', fg=PINK, font=(FONT_NAME, 28))
+
         if seconds < 10:
             if minutes < 10:
                 canvas.itemconfig(timer_text, text=f"0{minutes}:0{seconds}")
@@ -60,17 +93,30 @@ def start_timer():
 
         if seconds == 0:
             if minutes == 0:
-                timer_should_continue = False
-                button1.config(state=ACTIVE)
-                button2.config(state=DISABLED)
+                iteration_count += 1
+                if iteration_count % 2 == 0:
+                    minutes = 1
+                    if iteration_count == 10:
+                        timer_should_continue = False
+                        button1.config(state=ACTIVE)
+                        button2.config(state=DISABLED)
+                        canvas.itemconfig(timer_text, text=f"0{minutes}:0{seconds}")
+                        title.config(text='Timer', fg=GREEN, font=(FONT_NAME, 28))
+
+                        if timer is not None:
+                            window.after_cancel(timer)
+                else:
+                    minutes = SHORT_BREAK_MIN - 3
+                # timer_should_continue = False
+                # button1.config(state=ACTIVE)
+                # button2.config(state=DISABLED)
             else:
                 seconds = 59
                 minutes -= 1
         else:
             seconds -= 1
 
-        window.after(1000, start_timer)
-
+        timer = window.after(1000, start_timer)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -89,6 +135,9 @@ canvas.grid(column=2, row=2)
 
 button1 = Button(text="Start", command=start_timer)
 button1.grid(column=1, row=3)
+
+chmark = Label(fg=GREEN, bg=YELLOW, font=(FONT_NAME, 28, "bold"))
+chmark.grid(column=2, row=3)
 
 button2 = Button(text="Reset", command=reset_timer)
 button2.grid(column=3, row=3)
